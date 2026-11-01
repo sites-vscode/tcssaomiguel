@@ -25,16 +25,18 @@ function updateMandatory(){ $('#familyPicker').classList.toggle('hidden',$('inpu
 $('#billForm').onsubmit=async e=>{e.preventDefault();if(!families.length)return alert('Cadastre uma família.');const mandatory=$('input[name="mandatory"]:checked').value==='yes',family_ids=mandatory?[]:$$('#billFamilies input:checked').map(i=>i.value);if(!mandatory&&!family_ids.length)return alert('Selecione uma família.');const row={name:$('#billName').value.trim(),amount:+$('#billAmount').value,month:$('#billMonth').value,mandatory,family_ids},result=await db.from('bills').insert(row);if(result.error)return alert('Erro ao salvar: '+result.error.message);$('#billModal').close();await loadData()};
 async function removeBill(id){if(confirm('Excluir esta conta?')){await db.from('bills').delete().eq('id',id);await loadData()}}window.removeBill=removeBill;
 $$('.tab').forEach(t=>t.onclick=()=>{$$('.tab').forEach(x=>x.classList.remove('active'));t.classList.add('active');billFilter=t.dataset.billTab;renderBills()});
-function familyReportRows(list, fd){
+function familyReportRows(list, fd, allocations = {}){
   return fd.map(family => {
     const accounts = list.map(bill => {
       const selected = bill.mandatory ? fd : fd.filter(f => (bill.family_ids || []).includes(f.id));
       if (!selected.some(f => f.id === family.id)) return null;
-      const familyShare = Number(bill.amount) / selected.length;
-      return {name: bill.name, mandatory: bill.mandatory, amount: familyShare};
+      const billId = bill.id || bill.name;
+      const baseShare = Number(bill.amount) / selected.length;
+      const key=`${billId}__${family.id}`;
+      return {name: bill.name, mandatory: bill.mandatory, amount: allocations[key] ?? baseShare, key};
     }).filter(Boolean);
     const total = accounts.reduce((sum, account) => sum + account.amount, 0);
-    const rows = accounts.length ? accounts.map(account => `<tr><td>${esc(account.name)}${account.mandatory ? ' <small>(obrigatória)</small>' : ''}</td><td>${money(account.amount)}</td></tr>`).join('') : '<tr><td colspan="2" class="no-bills">Nenhuma conta atribuída.</td></tr>';
+    const rows = accounts.length ? accounts.map(account => `<tr><td>${esc(account.name)}${account.mandatory ? ' <small>(obrigatória)</small>' : ''}</td><td><div class="adjustable-value">R$ <input class="allocation-input" data-key="${account.key}" type="number" min="0" step="0.01" value="${account.amount.toFixed(2)}"></div></td></tr>`).join('') : '<tr><td colspan="2" class="no-bills">Nenhuma conta atribuída.</td></tr>';
     return `<section class="family-report"><h2>${esc(family.name)}</h2><table class="family-report-table"><thead><tr><th>Conta</th><th>Valor da família</th></tr></thead><tbody>${rows}<tr class="family-total"><td>Total da família</td><td>${money(total)}</td></tr></tbody></table></section>`;
   }).join('');
 }
@@ -43,25 +45,35 @@ function publicReportLink(report){
   return base + encodeURIComponent(report.public_token);
 }
 function showReport(month,list,fd=families){
+ const allocations=reports.find(r=>r.month===month)?.snapshot?.allocations || {};
  const total=list.reduce((s,b)=>s+Number(b.amount),0),mandatory=list.filter(b=>b.mandatory).reduce((s,b)=>s+Number(b.amount),0);
  const saved=reports.find(r=>r.month===month);
  const link=saved?.public_token?{month,public_token:saved.public_token}:null;
- $('#reportPreview').innerHTML=`<div id="generatedReport" class="report"><div class="report-head"><img class="report-logo" src="logo.png"><h1>Tribunal de Contas do Sítio</h1><strong>São Miguel</strong><p>Documento mensal — ${monthName(month)}</p></div><h3 class="report-section-title">Contas por família</h3>${familyReportRows(list,fd)}<div style="text-align:right;margin-top:20px"><strong>Total geral do sítio: ${money(total)}</strong><br><span>Total das contas obrigatórias: ${money(mandatory)}</span></div><p style="margin-top:60px;font-size:11px">Gerado pelo TCS em ${formatGeneratedAt(saved?.snapshot?.generated_at || new Date().toISOString())}.</p></div><div class="report-actions"><button class="primary" id="downloadImage">Baixar imagem</button><button class="secondary" id="downloadPdf">Baixar PDF</button><button class="secondary" id="publicLinkButton">${link?'Copiar link do documento':'Gerar link do documento'}</button></div><div id="publicLinkArea" class="public-link" ${link?'':'hidden'}></div>`;
+ $('#reportPreview').innerHTML=`<div id="generatedReport" class="report"><div class="report-head"><img class="report-logo" src="logo.png"><h1>Tribunal de Contas do Sítio</h1><strong>São Miguel</strong><p>Documento mensal — ${monthName(month)}</p></div><h3 class="report-section-title">Contas por família</h3>${familyReportRows(list,fd,allocations)}<div style="text-align:right;margin-top:20px"><strong>Total geral do sítio: ${money(total)}</strong><br><span>Total das contas obrigatórias: ${money(mandatory)}</span></div><p style="margin-top:60px;font-size:11px">Gerado pelo TCS em ${formatGeneratedAt(saved?.snapshot?.generated_at || new Date().toISOString())}.</p></div><div class="report-actions"><button class="primary" id="downloadImage">Baixar imagem</button><button class="secondary" id="downloadPdf">Baixar PDF</button><button class="secondary" id="publicLinkButton">${link?'Copiar link do documento':'Gerar link do documento'}</button></div><div id="publicLinkArea" class="public-link" ${link?'':'hidden'}></div>`;
  bindDownloads(month);
+ bindAllocationInputs();
  if(link){renderPublicLink(link)}
  $('#publicLinkButton').onclick=()=>{link?copyPublicLink(link):ensurePublicLink(month,list)};
 }
+function bindAllocationInputs(){
+ $$('.allocation-input').forEach(input=>input.addEventListener('input',()=>{
+   const section=input.closest('.family-report');
+   let total=[...section.querySelectorAll('.allocation-input')].reduce((sum,item)=>sum+Math.max(0,Number(item.value)||0),0);
+   section.querySelector('.family-total td:last-child').textContent=money(total);
+ }));
+}
+function currentAllocations(){const values={};$$('.allocation-input').forEach(input=>{values[input.dataset.key]=Number(input.value)||0});return values}
 function renderPublicLink(report){const area=$('#publicLinkArea');area.hidden=false;const link=publicReportLink(report);area.innerHTML=`<small>Link público</small><input readonly value="${link}"><a class="primary" href="${link}" target="_blank">Abrir documento público</a>`;$('#publicLinkButton').textContent='Copiar link do documento';$('#publicLinkButton').onclick=()=>copyPublicLink(report)}
 async function copyPublicLink(report){await navigator.clipboard.writeText(publicReportLink(report));$('#publicLinkButton').textContent='Link copiado!'}
 async function ensurePublicLink(month,list){
  let report=reports.find(r=>r.month===month),public_token=report?.public_token||crypto.randomUUID().replaceAll('-','').slice(0,16);
- const {error}=await db.from('reports').upsert({month,public_token,snapshot:{families,bills:list,generated_at:new Date().toISOString()}},{onConflict:'month'});
+ const {error}=await db.from('reports').upsert({month,public_token,snapshot:{families,bills:list,allocations:currentAllocations(),generated_at:new Date().toISOString()}},{onConflict:'month'});
  if(error){alert('Não foi possível criar o link: '+error.message);return}
- report={month,public_token,snapshot:{families,bills:list,generated_at:new Date().toISOString()}};
+ report={month,public_token,snapshot:{families,bills:list,allocations:currentAllocations(),generated_at:new Date().toISOString()}};
  const index=reports.findIndex(r=>r.month===month);index>=0?reports[index]=report:reports.push(report);
  renderPublicLink(report);renderSavedReports();
 }
-$('#generateReport').onclick=async()=>{const month=$('#reportMonth').value;if(!month)return alert('Selecione um mês.');$('#reportPreview').innerHTML='<p style="margin-top:180px"><strong>Gerando documento...</strong><br><small>'+monthName(month)+'</small></p>';await new Promise(r=>setTimeout(r,700));const list=bills.filter(b=>b.month===month);showReport(month,list);const existing=reports.find(r=>r.month===month);const public_token=existing?.public_token||crypto.randomUUID().replaceAll('-','').slice(0,16);await db.from('reports').upsert({month,public_token,snapshot:{families,bills:list,generated_at:new Date().toISOString()}},{onConflict:'month'});await loadData();showReport(month,list)};
+$('#generateReport').onclick=async()=>{const month=$('#reportMonth').value;if(!month)return alert('Selecione um mês.');$('#reportPreview').innerHTML='<p style="margin-top:180px"><strong>Gerando documento...</strong><br><small>'+monthName(month)+'</small></p>';await new Promise(r=>setTimeout(r,700));const list=bills.filter(b=>b.month===month);showReport(month,list);const existing=reports.find(r=>r.month===month);const public_token=existing?.public_token||crypto.randomUUID().replaceAll('-','').slice(0,16);await db.from('reports').upsert({month,public_token,snapshot:{families,bills:list,allocations:{},generated_at:new Date().toISOString()}},{onConflict:'month'});await loadData();showReport(month,list)};
 function bindDownloads(month){$('#downloadImage').onclick=async()=>{const canvas=await html2canvas($('#generatedReport'),{scale:2}),a=document.createElement('a');a.download=`TCS-${month}.png`;a.href=canvas.toDataURL('image/png');a.click()};$('#downloadPdf').onclick=async()=>{const canvas=await html2canvas($('#generatedReport'),{scale:2}),{jsPDF}=window.jspdf,pdf=new jsPDF('p','mm','a4');pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,210,297);pdf.save(`TCS-${month}.pdf`)}}
 function renderSavedReports(){if(!reports.length){$('#savedReports').innerHTML='Nenhum documento salvo.';return}$('#savedReports').innerHTML=reports.map(r=>`<article class="family-card" style="display:inline-block;width:220px;margin:8px"><small>${r.created_at?new Date(r.created_at).toLocaleDateString('pt-BR'):''}</small><h3>${monthName(r.month)}</h3><div class="card-actions"><button onclick="openSavedReport('${r.month}')">Abrir</button></div></article>`).join('')}
 function openSavedReport(month){const r=reports.find(x=>x.month===month);if(!r)return;$('#reportMonth').value=month;showReport(month,r.snapshot.bills||[],r.snapshot.families||families)}window.openSavedReport=openSavedReport;
