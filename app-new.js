@@ -82,6 +82,9 @@ function bindDownloads(month){$('#downloadImage').onclick=async()=>{const canvas
 function renderSavedReports(){if(!reports.length){$('#savedReports').innerHTML='Nenhum documento salvo.';return}$('#savedReports').innerHTML=reports.map(r=>`<article class="family-card" style="display:inline-block;width:220px;margin:8px"><small>${r.created_at?new Date(r.created_at).toLocaleDateString('pt-BR'):''}</small><h3>${monthName(r.month)}</h3><div class="card-actions"><button onclick="openSavedReport('${r.month}')">Abrir</button></div></article>`).join('')}
 function openSavedReport(month){const r=reports.find(x=>x.month===month);if(!r)return;$('#reportMonth').value=month;showReport(month,r.snapshot.bills||[],r.snapshot.families||families)}window.openSavedReport=openSavedReport;
 $('#reportMonth').value=currentMonth();$('#billMonth').value=currentMonth();
+function applyTheme(theme){document.body.classList.toggle('dark-theme',theme==='dark');document.body.dataset.theme=theme;const toggle=$('#themeToggle');if(toggle){toggle.textContent=theme==='dark'?'☀':'☾';toggle.title=theme==='dark'?'Ativar modo claro':'Ativar modo escuro';toggle.setAttribute('aria-label',toggle.title)}}
+applyTheme(localStorage.getItem('tcs-theme')||'light');
+$('#themeToggle')?.addEventListener('click',()=>{const theme=document.body.dataset.theme==='dark'?'light':'dark';localStorage.setItem('tcs-theme',theme);applyTheme(theme)});
 $('#loginForm').onsubmit=async e=>{e.preventDefault();$('#loginError').textContent='Entrando...';const {error}=await db.auth.signInWithPassword({email:$('#loginEmail').value.trim(),password:$('#loginPassword').value});if(error){$('#loginError').textContent='E-mail ou senha inválidos.'}else showAuthenticated();};
 $('#logoutBtn').onclick=async()=>{await db.auth.signOut();showLogin()};
 function showAuthenticated(){ $('#loginScreen').style.display='none';$('#appContent').classList.remove('app-hidden');loadData(); }
