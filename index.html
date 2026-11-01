@@ -8,6 +8,7 @@
   <link rel="icon" href="logo.png" type="image/png">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="dark-theme.css">
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
@@ -34,7 +35,7 @@
   </aside>
 
   <main>
-    <header class="topbar"><button id="menuBtn">☰</button><div><small>Sistema de contas</small><h1 id="pageTitle">Visão geral</h1></div>    <div class="status-dot">● Dados salvos no Supabase</div><button id="logoutBtn" class="logout-btn">Sair</button></header>
+    <header class="topbar"><button id="menuBtn">☰</button><div><small>Sistema de contas</small><h1 id="pageTitle">Visão geral</h1></div><button id="themeToggle" class="theme-toggle" type="button" title="Alternar modo claro ou escuro" aria-label="Alternar modo escuro">☾</button><div class="status-dot">● Dados salvos no Supabase</div><button id="logoutBtn" class="logout-btn">Sair</button></header>
 
     <section id="dashboard" class="view active">
       <div class="hero"><img src="logo.png" alt="Logo TCS"><div><small>TRIBUNAL DE CONTAS</small><h2>São Miguel</h2><p>Controle mensal das contas do sítio</p></div><button class="primary" onclick="openSection('documents')">Gerar documento</button></div>
@@ -75,6 +76,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>window.TCS_SUPABASE_URL='https://zchikbhgjwjwwsvttbfs.supabase.co';window.TCS_SUPABASE_KEY='sb_publishable_y0bbXvriq6SHGi_vvwfXWg_p-dYYETP';</script>
-  <script src="app-new.js?v=202611011735"></script>
+  <script src="app-new.js?v=202611011745"></script>
 </body>
 </html>
