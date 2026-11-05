@@ -39,7 +39,22 @@
 
     <section id="dashboard" class="view active">
       <div class="hero"><img src="logo.png" alt="Logo TCS"><div><small>TRIBUNAL DE CONTAS</small><h2>São Miguel</h2><p>Controle mensal das contas do sítio</p></div><button class="primary" onclick="openSection('documents')">Gerar documento</button></div>
-      <div class="stats"><article><span>Famílias cadastradas</span><strong id="familyCount">0</strong></article><article><span>Contas obrigatórias</span><strong id="mandatoryCount">0</strong></article><article><span>Total do mês</span><strong id="monthTotal">R$ 0,00</strong></article><article><span>Próximo documento</span><strong id="nextMonth">—</strong></article></div>
+      <div class="dashboard-period"><div><small>PERÍODO FINANCEIRO</small><strong id="dashboardPeriodName">Mês atual</strong></div><label><span>Selecionar mês</span><input type="month" id="dashboardMonth"></label></div>
+      <div class="stats dashboard-stats">
+        <article><span>Famílias participantes</span><strong id="familyCount">0</strong></article>
+        <article><span>Contas gerais</span><strong id="mandatoryCount">0</strong></article>
+        <article><span>Contas parciais</span><strong id="partialCount">0</strong></article>
+        <article><span>Valor total do período</span><strong id="monthTotal">R$ 0,00</strong></article>
+        <article><span>Média por família</span><strong id="familyAverage">R$ 0,00</strong></article>
+        <article><span>Contas cadastradas</span><strong id="billsCount">0</strong></article>
+        <article><span>Último documento</span><strong id="lastDocument">—</strong></article>
+        <article><span>Próximo documento</span><strong id="nextMonth">—</strong></article>
+      </div>
+      <div class="dashboard-grid">
+        <section class="panel"><div class="panel-head"><div><small>EVOLUÇÃO</small><h3>Despesas dos últimos meses</h3></div></div><div id="monthlyChart" class="monthly-chart"></div></section>
+        <section class="panel"><div class="panel-head"><div><small>CLASSIFICAÇÃO</small><h3>Distribuição do período</h3></div></div><div id="expenseDistribution" class="distribution"></div></section>
+      </div>
+      <div class="dashboard-actions"><button class="secondary" onclick="openFamilyModal()">＋ Nova família</button><button class="secondary" onclick="openBillModal()">＋ Nova conta</button><button class="primary" onclick="openSection('documents')">Gerar documento</button></div>
       <div class="panel"><div class="panel-head"><div><small>RESUMO</small><h3>Contas recentes</h3></div></div><div id="recentBills" class="empty-state">Nenhuma conta cadastrada.</div></div>
     </section>
 
@@ -50,7 +65,7 @@
 
     <section id="bills" class="view">
       <div class="toolbar"><div><small>FINANCEIRO</small><h2>Contas mensais</h2></div><button class="primary" id="newBill">＋ Nova conta</button></div>
-      <div class="tabs"><button class="tab active" data-bill-tab="all">Todas</button><button class="tab" data-bill-tab="mandatory">Obrigatórias</button><button class="tab" data-bill-tab="family">Por família</button></div>
+      <div class="tabs"><button class="tab active" data-bill-tab="all">Todas</button><button class="tab" data-bill-tab="mandatory">Contas gerais</button><button class="tab" data-bill-tab="family">Contas parciais</button></div>
       <div id="billList" class="table-wrap"></div>
     </section>
 
@@ -69,13 +84,13 @@
   </main>
   </div>
 
-  <dialog id="familyModal"><form method="dialog" id="familyForm"><div class="modal-head"><div><small>CADASTRO</small><h3>Nova família</h3></div><button value="cancel" class="close" aria-label="Fechar">×</button></div><input type="hidden" id="familyId"><label>Nome da família<input id="familyName" required placeholder="Ex.: Família Silva"></label><label>Quantidade de pessoas<input id="peopleCount" type="number" min="1" max="50" required></label><div id="peopleNames"></div><div class="modal-actions"><button value="cancel" class="secondary">Cancelar</button><button type="submit" value="default" class="primary">Salvar família</button></div></form></dialog>
+  <dialog id="familyModal"><form method="dialog" id="familyForm"><div class="modal-head"><div><small>CADASTRO</small><h3>Nova família</h3></div><button value="cancel" class="close" aria-label="Fechar">×</button></div><input type="hidden" id="familyId"><label>Nome da família<input id="familyName" required placeholder="Ex.: Família Silva"></label><label>Quantidade de pessoas<input id="peopleCount" type="number" min="1" max="50" required></label><label class="status-check"><input id="familyActive" type="checkbox" checked> Família ativa para novos rateios</label><div id="peopleNames"></div><div class="modal-actions"><button value="cancel" class="secondary">Cancelar</button><button type="submit" value="default" class="primary">Salvar família</button></div></form></dialog>
 
-  <dialog id="billModal"><form method="dialog" id="billForm"><div class="modal-head"><div><small>CADASTRO</small><h3>Nova conta</h3></div><button value="cancel" class="close" aria-label="Fechar">×</button></div><input type="hidden" id="billId"><div class="form-grid"><label>Nome da dívida<input id="billName" required placeholder="Ex.: Conta de luz"></label><label>Valor (R$)<input id="billAmount" type="number" min="0.01" step="0.01" required></label></div><label>Mês de competência<input id="billMonth" type="month" required></label><fieldset><legend>Conta obrigatória?</legend><div class="radio-row"><label><input type="radio" name="mandatory" value="yes"> Sim — divide entre todas as famílias</label><label><input type="radio" name="mandatory" value="no" checked> Não — selecionar famílias</label></div></fieldset><fieldset id="familyPicker" class="family-picker"><legend>Famílias que pagam esta conta</legend><div id="billFamilies"></div></fieldset><fieldset id="allocationFields"><legend>Valor aproximado por família</legend></fieldset><div class="modal-actions"><button value="cancel" class="secondary">Cancelar</button><button type="submit" value="default" class="primary">Salvar conta</button></div></form></dialog>
+  <dialog id="billModal"><form method="dialog" id="billForm"><div class="modal-head"><div><small>CADASTRO</small><h3>Nova conta</h3></div><button value="cancel" class="close" aria-label="Fechar">×</button></div><input type="hidden" id="billId"><div class="form-grid"><label>Nome da dívida<input id="billName" required placeholder="Ex.: Conta de luz"></label><label>Valor (R$)<input id="billAmount" type="number" min="0.01" step="0.01" required></label></div><label>Mês de competência<input id="billMonth" type="month" required></label><fieldset id="familyPicker" class="family-picker"><legend>Famílias participantes</legend><div id="billFamilies"></div><div id="billClassification" class="classification-preview"></div></fieldset><fieldset id="allocationFields"><legend>Valor aproximado por família</legend></fieldset><div class="modal-actions"><button value="cancel" class="secondary">Cancelar</button><button type="submit" value="default" class="primary">Salvar conta</button></div></form></dialog>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>window.TCS_SUPABASE_URL='https://zchikbhgjwjwwsvttbfs.supabase.co';window.TCS_SUPABASE_KEY='sb_publishable_y0bbXvriq6SHGi_vvwfXWg_p-dYYETP';</script>
-  <script src="app-new.js?v=202611011745"></script>
+  <script src="app-new.js?v=202611051840"></script>
 </body>
 </html>
