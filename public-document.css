@@ -5,8 +5,7 @@
 html{background:var(--page)}
 body.public-document-body{margin:0;padding:28px;background:var(--page);color:var(--ink);font-family:"DM Sans",Arial,sans-serif;-webkit-font-smoothing:antialiased}
 .official-document{width:min(210mm,100%);min-height:297mm;margin:0 auto;background:var(--paper);padding:10mm 12mm 8mm;box-shadow:0 10px 35px rgba(4,25,48,.16);position:relative;overflow:hidden}
-.institutional-header{height:112px;display:grid;grid-template-columns:112px 1fr 112px;align-items:center;border-bottom:3px solid var(--gold);padding-bottom:14px}
-.institutional-header:before{content:"";width:112px}
+.institutional-header{height:112px;display:grid;grid-template-columns:1fr;place-items:center;border-bottom:3px solid var(--gold);padding-bottom:14px}
 .header-logo{text-align:center}.header-logo img{width:96px;height:96px;object-fit:contain}
 .header-identity{text-align:center;color:var(--navy);line-height:1.05}.header-identity p{font-family:"Libre Baskerville",serif;font-size:17px;margin:0 0 8px}.header-identity strong{font-size:27px;letter-spacing:.4px}
 .document-title{text-align:center;padding:25px 0 22px}.document-title>span{font-size:11px;text-transform:uppercase;letter-spacing:3px;color:var(--gold);font-weight:700}.document-title h1{font-family:"Libre Baskerville",serif;font-size:28px;margin:8px 0;color:var(--navy)}.reference-period{display:inline-block;min-width:220px;margin-top:5px;background:var(--navy);color:white;border-radius:3px;padding:8px 18px;font-weight:700;text-transform:capitalize}
