@@ -93,10 +93,6 @@ async function load() {
     <article class="official-document">
       <header class="institutional-header">
         <div class="header-logo"><img src="logo.png" alt="Logo Tribunal de Contas do Sítio São Miguel"></div>
-        <div class="header-identity">
-          <p>Tribunal de Contas do Sítio</p>
-          <strong>São Miguel</strong>
-        </div>
       </header>
       <div class="document-title">
         <span>Prestação de contas</span>
