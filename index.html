@@ -6,7 +6,7 @@
   <title>TCS — Tribunal de Contas do Sítio São Miguel</title>
   <meta name="theme-color" content="#052f5f">
   <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="styles.css?v=202611051945">
+  <link rel="stylesheet" href="styles.css?v=202611061800">
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="dark-theme.css?v=202611051945">
   <link rel="stylesheet" href="public-document.css?v=202611052015">
@@ -39,6 +39,7 @@
       <button class="nav-item" data-view="families"><span>♙</span>Famílias</button>
       <button class="nav-item" data-view="bills"><span>▤</span>Contas</button>
       <button class="nav-item" data-view="documents"><span>⇩</span>Documentos</button>
+      <button class="nav-item" data-view="periods"><span>✓</span>Período Financeiro</button>
     </nav>
     <div class="sidebar-foot">Tribunal de Contas do Sítio</div>
   </aside>
@@ -90,6 +91,22 @@
         <div id="savedReports" class="empty-state">Nenhum documento salvo.</div>
       </div>
     </section>
+
+    <section id="periods" class="view">
+      <div class="toolbar"><div><small>ENCERRAMENTO</small><h2>Período Financeiro</h2></div></div>
+      <div class="period-manager-grid">
+        <div class="panel">
+          <small>SELEÇÃO</small>
+          <h3>Escolha o mês</h3>
+          <label>Período financeiro<input type="month" id="periodMonth"></label>
+        </div>
+        <div class="panel" id="periodStatus"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><div><small>MESES</small><h3>Histórico de períodos</h3></div></div>
+        <div id="periodList" class="table-wrap"></div>
+      </div>
+    </section>
   </main>
   </div>
 
@@ -100,6 +117,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>window.TCS_SUPABASE_URL='https://zchikbhgjwjwwsvttbfs.supabase.co';window.TCS_SUPABASE_KEY='sb_publishable_y0bbXvriq6SHGi_vvwfXWg_p-dYYETP';</script>
-  <script src="app-new.js?v=202611052015"></script>
+  <script src="app-new.js?v=202611061800"></script>
 </body>
 </html>
