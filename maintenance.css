@@ -1,0 +1,128 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Baskerville:wght@700&display=swap');
+
+:root {
+  --navy: #052f5f;
+  --gold: #d6a12c;
+  --white: #fff;
+  --ink: #172033;
+  --muted: #68758a;
+  --line: #dfe6ee;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "DM Sans", sans-serif;
+  color: var(--ink);
+  background: linear-gradient(145deg, #031d38, var(--navy) 58%, #0876b7);
+}
+
+.maintenance-page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.maintenance-card {
+  width: min(520px, 100%);
+  padding: 34px 38px 30px;
+  text-align: center;
+  border-radius: 18px;
+  background: var(--white);
+  box-shadow: 0 28px 80px rgba(0, 18, 42, 0.38);
+}
+
+.maintenance-logo {
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  margin-bottom: 10px;
+}
+
+.maintenance-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #805d00;
+  background: #fff3ca;
+  border-radius: 30px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+.maintenance-status span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 4px rgba(214, 161, 44, 0.18);
+}
+
+h1 {
+  margin: 18px 0 8px;
+  color: var(--navy);
+  font-family: "Libre Baskerville", serif;
+  font-size: clamp(26px, 6vw, 34px);
+}
+
+.maintenance-card > p {
+  margin: 0 0 22px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.maintenance-info {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  margin-top: 10px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.maintenance-info strong {
+  color: var(--navy);
+  font-size: 14px;
+}
+
+.maintenance-info span {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.maintenance-card .maintenance-note {
+  margin: 18px 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.maintenance-card button {
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 18px;
+  color: var(--white);
+  background: var(--navy);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.maintenance-card button:hover {
+  background: #0876b7;
+}
+
+@media (max-width: 560px) {
+  .maintenance-page { padding: 14px; }
+  .maintenance-card { padding: 28px 20px 24px; }
+  .maintenance-logo { width: 120px; height: 120px; }
+}
