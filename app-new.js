@@ -6,9 +6,9 @@ const currentMonth=()=>new Date().toISOString().slice(0,7);
 const monthName=m=>{const [y,n]=m.split('-');return new Date(+y,+n-1,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'})};
 const esc=s=>{const d=document.createElement('div');d.textContent=s||'';return d.innerHTML};
 const formatGeneratedAt=iso=>{if(!iso)return '';return new Date(iso).toLocaleString('pt-BR',{dateStyle:'short',timeStyle:'short'})};
-async function loadData(){const [f,b,r,p]=await Promise.all([db.from('families').select('*').order('name'),db.from('bills').select('*').order('month',{ascending:false}),db.from('reports').select('*').order('month',{ascending:false}),db.from('financial_periods').select('*').order('month',{ascending:false})]);if(f.error||b.error||r.error||p.error)document.body.insertAdjacentHTML('afterbegin','<div style="position:fixed;z-index:99;top:10px;left:50%;transform:translateX(-50%);background:#ffe3e3;color:#900;padding:12px;border-radius:8px">Execute a atualização SQL mais recente do Supabase.</div>');families=f.data||[];bills=b.data||[];reports=r.data||[];periods=p.error?[]:(p.data||[]);render();renderSavedReports();renderPeriods()}
+async function loadData(){const [f,b,r,p]=await Promise.all([db.from('families').select('*').order('name'),db.from('bills').select('*').order('month',{ascending:false}),db.from('reports').select('*').order('month',{ascending:false}),db.from('financial_periods').select('*').order('month',{ascending:false})]);if(f.error||b.error||r.error||p.error)document.body.insertAdjacentHTML('afterbegin','<div style="position:fixed;z-index:99;top:10px;left:50%;transform:translateX(-50%);background:#ffe3e3;color:#900;padding:12px;border-radius:8px">Execute a atualização SQL mais recente do Supabase.</div>');families=f.data||[];bills=b.data||[];reports=r.data||[];periods=p.error?[]:(p.data||[]);render();renderSavedReports();renderPeriods();renderComparison()}
 const periodClosed=month=>periods.some(period=>period.month===month&&period.closed===true);
-function openSection(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));$('#pageTitle').textContent={dashboard:'Visão geral',families:'Famílias',bills:'Contas',documents:'Documentos',periods:'Período Financeiro'}[id];$('.sidebar').classList.remove('open')}
+function openSection(id){$$('.view').forEach(v=>v.classList.remove('active'));$('#'+id).classList.add('active');$$('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.view===id));$('#pageTitle').textContent={dashboard:'Visão geral',families:'Famílias',bills:'Contas',documents:'Documentos',periods:'Período Financeiro',comparison:'Comparativo'}[id];$('.sidebar').classList.remove('open')}
 $$('.nav-item').forEach(b=>b.onclick=()=>openSection(b.dataset.view));$('#menuBtn').onclick=()=>$('.sidebar').classList.toggle('open');
 function render(){dashboardMonth=dashboardMonth||currentMonth();const m=dashboardMonth,mb=bills.filter(b=>b.month===m),activeFamilies=families.filter(f=>f.active!==false);const general=mb.filter(b=>b.mandatory);const partial=mb.filter(b=>!b.mandatory);const total=mb.reduce((s,b)=>s+Number(b.amount),0);$('#dashboardMonth').value=m;$('#dashboardPeriodName').textContent=monthName(m);$('#familyCount').textContent=activeFamilies.length;$('#mandatoryCount').textContent=general.length;$('#partialCount').textContent=partial.length;$('#monthTotal').textContent=money(total);$('#familyAverage').textContent=money(activeFamilies.length?total/activeFamilies.length:0);$('#billsCount').textContent=mb.length;$('#nextMonth').textContent=monthName(m);renderLastDocument();renderMonthlyChart();renderDistribution(general,partial);renderFamilies();renderBills();renderRecent()}
 function renderLastDocument(){const last=[...reports].sort((a,b)=>String(b.month).localeCompare(String(a.month))).find(r=>r.month<=dashboardMonth);$('#lastDocument').textContent=last?monthName(last.month):'—'}
@@ -146,6 +146,55 @@ async function toggleFinancialPeriod(month){
 }
 window.toggleFinancialPeriod=toggleFinancialPeriod;
 $('#periodMonth')?.addEventListener('change',renderPeriods);
+const normalizeComparisonName=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim().replace(/\s+/g,' ');
+const previousMonth=month=>{const [year,number]=String(month||'').split('-').map(Number);const date=new Date(year,number-2,1);return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`};
+const comparisonCents=value=>Math.round((Number(value)||0)*100);
+const comparisonMoney=cents=>money(cents/100);
+function comparisonTotals(month){
+ const totals=new Map();
+ bills.filter(bill=>bill.month===month).forEach(bill=>{
+  const key=normalizeComparisonName(bill.name);
+  totals.set(key,{name:bill.name,cents:(totals.get(key)?.cents||0)+comparisonCents(bill.amount)});
+ });
+ return totals;
+}
+function renderComparison(){
+ if(!$('#comparisonBaseMonth')||!$('#comparisonTargetMonth'))return;
+ const months=[...new Set(bills.map(bill=>bill.month))].sort((a,b)=>b.localeCompare(a));
+ const target=$('#comparisonTargetMonth').value||months[0]||currentMonth();
+ let base=$('#comparisonBaseMonth').value||months.find(month=>month!==target)||previousMonth(target);
+ $('#comparisonBaseMonth').value=base||previousMonth(target);
+ $('#comparisonTargetMonth').value=target;
+ const baseMonth=$('#comparisonBaseMonth').value;
+ const targetMonth=$('#comparisonTargetMonth').value;
+ const baseTotals=comparisonTotals(baseMonth);
+ const targetTotals=comparisonTotals(targetMonth);
+ const names=[...new Set([...baseTotals.keys(),...targetTotals.keys()])];
+ const baseTotal=[...baseTotals.values()].reduce((sum,item)=>sum+item.cents,0);
+ const targetTotal=[...targetTotals.values()].reduce((sum,item)=>sum+item.cents,0);
+ const totalDifference=targetTotal-baseTotal;
+ const totalPercent=baseTotal?totalDifference/baseTotal*100:null;
+ const summaryClass=totalDifference>0?'up':totalDifference<0?'down':'stable';
+ $('#comparisonSummary').innerHTML=`<div class="stats comparison-summary"><article><span>Total de ${esc(monthName(baseMonth))}</span><strong>${comparisonMoney(baseTotal)}</strong></article><article><span>Total de ${esc(monthName(targetMonth))}</span><strong>${comparisonMoney(targetTotal)}</strong></article><article class="${summaryClass}"><span>Variação geral</span><strong>${totalDifference>0?'▲':totalDifference<0?'▼':'='} ${totalDifference===0?'0,00%':Math.abs(totalPercent||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%'}</strong><small>${comparisonMoney(Math.abs(totalDifference))} ${totalDifference>0?'a mais':totalDifference<0?'a menos':'sem alteração'}</small></article></div>`;
+ if(!baseMonth||!targetMonth){$('#comparisonList').innerHTML='<div class="panel empty-state">Selecione os dois meses para comparar.</div>';return}
+ const items=names.map(key=>{
+  const before=baseTotals.get(key)?.cents||0;
+  const after=targetTotals.get(key)?.cents||0;
+  const difference=after-before;
+  const percent=before?difference/before*100:null;
+  const status=difference>0?'up':difference<0?'down':'stable';
+  const name=targetTotals.get(key)?.name||baseTotals.get(key)?.name||key;
+  let message;
+  if(!before&&after>0)message='Esta conta foi adicionada neste mês';
+  else if(before>0&&after===0)message='Esta conta deixou de existir neste mês';
+  else if(difference===0)message='Esta conta manteve-se estável em comparação ao mês anterior.';
+  else message=`Esta conta ${difference>0?'aumentou':'diminuiu'} ${Math.abs(percent||0).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})}% (${comparisonMoney(Math.abs(difference))}) em relação ao mês anterior.`;
+  return {name,status,difference,percent,before,after,message};
+ }).sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
+ $('#comparisonList').innerHTML=items.length?items.map(item=>`<article class="comparison-card ${item.status}"><div><span class="comparison-badge">${item.status==='up'?'Aumentou':item.status==='down'?'Diminuiu':'Estável'}</span><h3>${esc(item.name)}</h3></div><p>${esc(item.message)}</p><div class="comparison-values"><span>${esc(monthName(baseMonth))}<strong>${comparisonMoney(item.before)}</strong></span><span>${esc(monthName(targetMonth))}<strong>${comparisonMoney(item.after)}</strong></span></div></article>`).join(''):`<div class="panel empty-state">Nenhuma conta cadastrada nos meses selecionados.</div>`;
+}
+$('#comparisonBaseMonth')?.addEventListener('change',renderComparison);
+$('#comparisonTargetMonth')?.addEventListener('change',renderComparison);
 function renderSavedReports(){if(!reports.length){$('#savedReports').innerHTML='<div class="empty-state">Nenhum documento salvo.</div>';return}$('#savedReports').innerHTML=reports.map(r=>`<article class="saved-report-card"><small>${r.created_at?new Date(r.created_at).toLocaleDateString('pt-BR'):''}</small><h3>${esc(monthName(r.month))}</h3><div class="card-actions"><button type="button" class="open-report" data-month="${esc(r.month)}">Abrir</button>${periodClosed(r.month)?'':`<button type="button" class="danger-action delete-report" data-id="${esc(r.id||'')}" data-month="${esc(r.month)}">Excluir</button>`}</div></article>`).join('');$$('.open-report').forEach(button=>button.addEventListener('click',()=>openSavedReport(button.dataset.month)));$$('.delete-report').forEach(button=>button.addEventListener('click',()=>deleteSavedReport(button.dataset.id,button.dataset.month)))}
 function openSavedReport(month){const r=reports.find(x=>x.month===month);if(!r)return;$('#reportMonth').value=month;showReport(month,r.snapshot?.bills||[],r.snapshot?.families||families)}window.openSavedReport=openSavedReport;
 async function deleteSavedReport(id,month){if(periodClosed(month))return alert('Este período está fechado. Reabra-o antes de excluir o documento.');if(!id)return alert('Não foi possível identificar o documento salvo.');if(!confirm(`Excluir definitivamente o documento de ${monthName(month)}? O link público deixará de funcionar.`))return;const {error}=await db.from('reports').delete().eq('id',id);if(error)return alert('Não foi possível excluir o documento: '+error.message);reports=reports.filter(report=>String(report.id)!==String(id));renderSavedReports();renderPeriods();if($('#reportMonth')?.value===month)$('#reportPreview').innerHTML='<img src="logo.png" alt="TCS"><p>Documento excluído. Gere novamente quando desejar.</p>'}window.deleteSavedReport=deleteSavedReport;
