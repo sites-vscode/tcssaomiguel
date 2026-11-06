@@ -6,7 +6,7 @@
   <title>TCS — Tribunal de Contas do Sítio São Miguel</title>
   <meta name="theme-color" content="#052f5f">
   <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="styles.css?v=202611061840">
+  <link rel="stylesheet" href="styles.css?v=202611061900">
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="dark-theme.css?v=202611051945">
   <link rel="stylesheet" href="public-document.css?v=202611061815">
@@ -40,6 +40,7 @@
       <button class="nav-item" data-view="bills"><span>▤</span>Contas</button>
       <button class="nav-item" data-view="documents"><span>⇩</span>Documentos</button>
       <button class="nav-item" data-view="periods"><span>✓</span>Período Financeiro</button>
+      <button class="nav-item" data-view="comparison"><span>↗</span>Comparativo</button>
     </nav>
     <div class="sidebar-foot">Tribunal de Contas do Sítio</div>
   </aside>
@@ -107,6 +108,16 @@
         <div id="periodList" class="table-wrap"></div>
       </div>
     </section>
+    <section id="comparison" class="view">
+      <div class="toolbar"><div><small>ANÁLISE MENSAL</small><h2>Comparativo de gastos</h2></div></div>
+      <div class="panel comparison-controls">
+        <label>Mês de referência<input type="month" id="comparisonBaseMonth"></label>
+        <button type="button" class="comparison-arrow" aria-label="Direção da comparação">→</button>
+        <label>Comparar com<input type="month" id="comparisonTargetMonth"></label>
+      </div>
+      <div id="comparisonSummary"></div>
+      <div id="comparisonList" class="comparison-list"></div>
+    </section>
   </main>
   </div>
 
@@ -117,6 +128,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>window.TCS_SUPABASE_URL='https://zchikbhgjwjwwsvttbfs.supabase.co';window.TCS_SUPABASE_KEY='sb_publishable_y0bbXvriq6SHGi_vvwfXWg_p-dYYETP';</script>
-  <script src="app-new.js?v=202611061840"></script>
+  <script src="app-new.js?v=202611061905"></script>
 </body>
 </html>
