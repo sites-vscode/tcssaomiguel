@@ -6,7 +6,7 @@
   <title>TCS — Tribunal de Contas do Sítio São Miguel</title>
   <meta name="theme-color" content="#052f5f">
   <link rel="icon" href="logo.png" type="image/png">
-  <link rel="stylesheet" href="styles.css?v=202611070910">
+  <link rel="stylesheet" href="styles.css?v=202611070930">
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="dark-theme.css?v=202611051945">
   <link rel="stylesheet" href="public-document.css?v=202611061815">
@@ -21,7 +21,7 @@
 </head>
 <body>
   <section id="loginScreen" class="login-screen">
-    <form id="loginForm" class="login-card">
+    <form id="loginForm" class="login-card" onsubmit="return false">
       <img src="logo.png" alt="TCS">
       <small>TRIBUNAL DE CONTAS DO SÍTIO</small>
       <h1>Entrar no sistema</h1>
@@ -83,7 +83,16 @@
     <section id="documents" class="view">
       <div class="toolbar"><div><small>RELATÓRIO</small><h2>Documentos mensais</h2></div></div>
       <div class="document-grid">
-        <div class="panel"><small>MÊS DE REFERÊNCIA</small><h3>Escolha o período</h3><label>Documento do mês</label><input type="month" id="reportMonth"><button class="primary full" id="generateReport">Gerar documento</button></div>
+        <div class="panel">
+          <small>MÊS DE REFERÊNCIA</small>
+          <h3>Escolha o período</h3>
+          <label>Documento do mês</label>
+          <input type="month" id="reportMonth">
+          <div id="documentReadiness" class="document-readiness"></div>
+          <button class="primary full" id="reviewReport">Revisar antes de gerar</button>
+          <button class="secondary full" id="generateDraft">Salvar rascunho</button>
+          <button class="primary full" id="generateReport" disabled>Gerar documento oficial</button>
+        </div>
         <div class="panel preview-panel"><div id="reportPreview"><img src="logo.png" alt="TCS"><p>Selecione o mês e gere o relatório.</p></div></div>
       </div>
       <div class="panel saved-reports-panel">
@@ -123,11 +132,16 @@
 
   <dialog id="familyModal"><form method="dialog" id="familyForm"><div class="modal-head"><div><small>CADASTRO</small><h3>Nova família</h3></div><button value="cancel" class="close" aria-label="Fechar">×</button></div><input type="hidden" id="familyId"><label>Nome da família<input id="familyName" required placeholder="Ex.: Família Silva"></label><label>Quantidade de pessoas<input id="peopleCount" type="number" min="1" max="50" required></label><label class="status-check"><input id="familyActive" type="checkbox" checked> Família ativa para novos rateios</label><div id="peopleNames"></div><div class="modal-actions"><button value="cancel" class="secondary">Cancelar</button><button type="submit" value="default" class="primary">Salvar família</button></div></form></dialog>
 
-  <dialog id="billModal"><form method="dialog" id="billForm"><div class="modal-head"><div><small>CADASTRO</small><h3>Nova conta</h3></div><button value="cancel" class="close" aria-label="Fechar">×</button></div><input type="hidden" id="billId"><div class="form-grid"><label>Nome da dívida<input id="billName" required placeholder="Ex.: Conta de luz"></label><label>Valor (R$)<input id="billAmount" type="number" min="0.01" step="0.01" required></label></div><label>Mês de competência<input id="billMonth" type="month" required></label><fieldset id="familyPicker" class="family-picker"><legend>Famílias participantes</legend><div id="billFamilies"></div><div id="billClassification" class="classification-preview"></div></fieldset><fieldset id="allocationFields"><legend>Valor aproximado por família</legend></fieldset><div class="modal-actions"><button value="cancel" class="secondary">Cancelar</button><button type="submit" value="default" class="primary">Salvar conta</button></div></form></dialog>
+  <dialog id="documentReviewModal">
+    <div class="modal-head"><div><small>VALIDAÇÃO</small><h3>Revisão do documento</h3></div><button class="close" onclick="documentReviewModal.close()" aria-label="Fechar">×</button></div>
+    <div id="documentReviewContent" class="document-review-content"></div>
+    <div class="modal-actions"><button class="secondary" onclick="documentReviewModal.close()">Continuar editando</button><button class="primary" id="confirmOfficialReport">Confirmar e gerar oficial</button></div>
+  </dialog>
+  <dialog id="billModal"><form method="dialog" id="billForm"><div class="modal-head"><div><small>CADASTRO</small><h3>Nova conta</h3></div><button value="cancel" class="close" aria-label="Fechar">×</button></div><input type="hidden" id="billId"><div class="form-grid"><label>Nome da dívida<input id="billName" required placeholder="Ex.: Conta de luz"></label><label>Valor (R$)<input id="billAmount" type="number" min="0.01" step="0.01" required></label><label>Categoria<select id="billCategory"><option value="Energia">Energia</option><option value="Internet">Internet</option><option value="Água">Água</option><option value="Manutenção">Manutenção</option><option value="Impostos">Impostos</option><option value="Seguros">Seguros</option><option value="Combustível">Combustível</option><option value="Outros">Outros</option></select></label><label>Tipo de conta<select id="billKind"><option value="monthly">Conta mensal recorrente</option><option value="extraordinary">Conta extraordinária</option></select></label></div><label>Mês de competência<input id="billMonth" type="month" required></label><label>Observação <small>Opcional</small><input id="billNotes" maxlength="160" placeholder="Ex.: vencimento, referência da fatura ou responsável"></label><fieldset id="familyPicker" class="family-picker"><legend>Famílias participantes</legend><div id="billFamilies"></div><div id="billClassification" class="classification-preview"></div></fieldset><fieldset id="allocationFields"><legend>Valor aproximado por família</legend></fieldset><div class="modal-actions"><button value="cancel" class="secondary">Cancelar</button><button type="submit" value="default" class="primary">Salvar conta</button></div></form></dialog>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>window.TCS_SUPABASE_URL='https://zchikbhgjwjwwsvttbfs.supabase.co';window.TCS_SUPABASE_KEY='sb_publishable_y0bbXvriq6SHGi_vvwfXWg_p-dYYETP';</script>
-  <script src="app-new.js?v=202611070910"></script>
+  <script src="app-new.js?v=202611070946"></script>
 </body>
 </html>
